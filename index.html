@@ -37,11 +37,21 @@
     border: 1px solid rgba(255, 42, 109, 0.25);
     box-shadow: inset 0 0 15px rgba(255, 42, 109, 0.08), 0 8px 30px rgba(0, 0, 0, 0.5);
     background: rgba(18, 10, 24, 0.15); backdrop-filter: blur(2px); overflow: hidden; padding: 8px;
+    transition: all 0.3s;
   }
+  /* フレームOFF時のスタイル */
+  .panel-face.hide-frame {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+  }
+
   .panel-front { z-index: 2; transform: rotateY(0deg); }
   .panel-front img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.6)); }
   .panel-back { transform: rotateY(180deg); opacity: 0.4; filter: brightness(0.7); }
   .panel-back img { max-width: 100%; max-height: 100%; object-fit: contain; transform: scaleX(-1); }
+  
   .panel-empty {
     width: 100%; height: 100%; border-radius: 14px; background: rgba(18, 10, 24, 0.4);
     backdrop-filter: blur(8px); border: 2px dashed rgba(255, 42, 109, 0.5);
@@ -81,7 +91,6 @@
   .bcal-nav:hover { text-shadow: 0 0 12px #d066ff; color: #d066ff; }
   .bcal-ym { font-weight: 700; font-size: 1.1rem; letter-spacing: 0.15em; color: #fff; text-shadow: 0 0 8px rgba(181, 55, 242, 0.5); }
   
-  /* カレンダーの行（Flexbox対応） */
   .bcal-row { display: flex; justify-content: stretch; gap: 6px; margin-bottom: 6px; width: 100%; }
   .bcal-cell {
     flex: 1; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 6px 0; text-align: center;
@@ -105,7 +114,6 @@
   .btn-sch svg { fill: rgba(0, 230, 255, 0.15); stroke: #00e6ff; }
   .btn-sch:hover { filter: drop-shadow(0 0 14px #00e6ff); }
   
-  /* UI非表示用クラス */
   .ui-hidden { opacity: 0 !important; pointer-events: none; transform: scale(0.95) translateY(20px); }
 
   /* ガラスパネル */
@@ -122,7 +130,6 @@
   .t-main { color: #ff2a6d; } .t-cal { color: #b537f2; } .t-sch { color: #00e6ff; }
   .close-btn { background: none; border: none; color: #888; font-size: 1.2rem; cursor: pointer; }
   
-  /* コントロール部品 */
   .control-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 5px; }
   .label { font-size: 0.68rem; color: #8a8190; letter-spacing: 0.1em; text-transform: uppercase; }
   
@@ -141,10 +148,7 @@
   .input-sch { border-color: #00e6ff !important; }
   .input-sch:focus { box-shadow: 0 0 12px #00e6ff !important; }
   
-  /* マーク入力用テキストボックス */
-  #sch-mark {
-    text-align: center; font-size: 1.5rem; letter-spacing: 0; padding: 4px; width: 60px;
-  }
+  #sch-mark { text-align: center; font-size: 1.5rem; letter-spacing: 0; padding: 4px; width: 60px; }
 
   input[type="range"] { appearance: none; width: 100%; height: 4px; background: #231929; border-radius: 2px; outline: none; }
   input[type="range"]::-webkit-slider-thumb { appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #ff2a6d; box-shadow: 0 0 6px #ff2a6d; }
@@ -155,7 +159,6 @@
   }
   .btn-submit:hover { background: #00e6ff; color: #000; box-shadow: 0 0 15px #00e6ff; }
 
-  /* 予定リスト表示部 */
   .sch-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: rgba(0,0,0,0.3); border-radius: 4px; margin-bottom: 6px; border-left: 3px solid #00e6ff; }
   .sch-mark { font-size: 1rem; margin-right: 8px; filter: drop-shadow(0 0 4px rgba(255,255,255,0.5)); }
   .sch-time { font-size: 0.7rem; color: #00e6ff; width: 45px;}
@@ -211,6 +214,14 @@
     <div class="label">Image Source</div>
     <button onclick="document.getElementById('image-file-input').click()" class="btn-outline-pink">＋ 画像を追加 (複数選択可)</button>
     <button onclick="resetAllImages()" class="btn-outline-red">🗑 全ての画像をリセット</button>
+  </div>
+  <!-- ★追加：画像フレームのON/OFF切り替え -->
+  <div class="control-group">
+    <div class="label">Image Frame (画像枠)</div>
+    <div class="pos-grid" style="grid-template-columns: 1fr 1fr;">
+      <button class="pos-btn active" id="btn-frame-on" onclick="toggleFrame(true)">ON</button>
+      <button class="pos-btn" id="btn-frame-off" onclick="toggleFrame(false)">OFF</button>
+    </div>
   </div>
   <div class="control-group">
     <div class="label">Rotation Direction</div>
@@ -330,6 +341,7 @@
   /* --- UI表示切替＆パネル（誤爆防止） --- */
   let uiVisible = true;
   let calendarVisible = false; // デフォルト非表示
+  let isFrameOn = true; // 画像フレームの表示状態
   
   document.addEventListener('dblclick', (e) => {
     if (e.target.closest('.glass-panel') || e.target.closest('.bottom-calendar') || e.target.closest('.heart-group')) {
@@ -363,6 +375,16 @@
     document.getElementById('btn-cal-hide').classList.toggle('cal-active', !show);
     document.getElementById('calendar-widget').style.display = show ? 'block' : 'none';
     updateResponsiveLayout();
+  }
+
+  /* ★追加：画像フレームのON/OFF処理 */
+  function toggleFrame(show) {
+    isFrameOn = show;
+    document.getElementById('btn-frame-on').classList.toggle('active', show);
+    document.getElementById('btn-frame-off').classList.toggle('active', !show);
+    document.querySelectorAll('.panel-face').forEach(el => {
+      el.classList.toggle('hide-frame', !show);
+    });
   }
 
   /* --- 予定管理処理 --- */
@@ -527,7 +549,9 @@
       let list = [...currentImages]; while (list.length < 6) list = list.concat(currentImages);
       list.forEach((src) => {
         const p = document.createElement('div'); p.className = 'carousel-panel';
-        p.innerHTML = `<div class="panel-face panel-front"><img src="${src}"></div><div class="panel-face panel-back"><img src="${src}"></div>`;
+        // ★isFrameOn の状態で hide-frame クラスをつけるか判定
+        const frameClass = isFrameOn ? '' : 'hide-frame';
+        p.innerHTML = `<div class="panel-face panel-front ${frameClass}"><img src="${src}"></div><div class="panel-face panel-back ${frameClass}"><img src="${src}"></div>`;
         cylinder.appendChild(p);
       });
     }
@@ -590,7 +614,6 @@
   const canvas = document.getElementById('heart-canvas'); const ctx = canvas.getContext('2d');
   let canvasW, canvasH; let hearts = [];
   function resizeCanvas() { 
-    // ここ！canvas.height の指定漏れを修正しました
     canvasW = canvas.width = window.innerWidth; 
     canvasH = canvas.height = window.innerHeight; 
   }
