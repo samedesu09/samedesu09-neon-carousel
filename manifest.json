@@ -1,0 +1,21 @@
+{
+  "name": "Neon Carousel",
+  "short_name": "Carousel",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#060309",
+  "theme_color": "#060309",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
